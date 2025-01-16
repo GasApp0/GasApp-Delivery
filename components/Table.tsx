@@ -21,6 +21,7 @@ const Table = ({onSelectCountChange, totalOrders}) => {
   const BASE_CUSTOMER_URL = "https://backend-node-0kx8.onrender.com";
   const [orders, setOrders] = useState({ data: [] });
   const [error, setError] = useState(null);
+  const [riderLocation, setRiderLocation] = useState(null);
   // const [totalOrders, setTotalOrders] = useState(0)
 
 
@@ -34,7 +35,7 @@ const Table = ({onSelectCountChange, totalOrders}) => {
 
         const data = await response.json()
         setOrders(data)
-        console.log(orders.data)
+        // console.log(orders.data)
       }
       catch (err) {
         setError(err.message)
@@ -46,6 +47,31 @@ const Table = ({onSelectCountChange, totalOrders}) => {
 
     fetchOrders();
 
+  }, [])
+
+  useEffect(() => {
+    const fetchLocation = async () => {
+      try {
+          const location = "downtown";
+          const response = await fetch(`${BASE_CUSTOMER_URL}/api/riders/rider/${location}`)
+
+          if(!response.ok){
+            throw new Error ("Failed To Fetch")
+          }
+
+          const dataLocation = await response.json()
+          setRiderLocation(dataLocation)
+          console.log( "location: ",  dataLocation)
+      }
+      catch (err) {
+        setError(err.message)
+      }
+      finally {
+
+      }
+    }
+    
+    fetchLocation();
   }, [])
  
 
@@ -61,7 +87,7 @@ const Table = ({onSelectCountChange, totalOrders}) => {
   
     setTotalPrice(totalPrice);
     onSelectCountChange(selectBookingID.length, orders.data.length, totalPrice,); // Pass orders.length
-    console.log(orders.data.length)
+    console.log(riderLocation)
   }, [selectBookingID, orders]);
   
 
