@@ -2,39 +2,39 @@ import React, { useEffect, useState }  from 'react';
 import { View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity, Modal, Linking, Button } from 'react-native';
 
 
-const data = [
-  { id: '1', No: '1', Name: 'Riely Ferguson', Hostel: 'Hall 7', Size: 'Small', Price: 'GHC 35' },
-  { id: '2', No: '2', Name: 'lauren Jackson', Hostel: 'Evandy - Newsite', Size: 'Medium', Price: 'GHC 70'},
-  { id: '3', No: '3', Name: 'Princess Rashida', Hostel: 'Victory Towers', Size: 'Medium', Price: 'GHC 70' },
-  // Add more data as needed
-];
+// const data = [
+//   { id: '1', No: '1', Name: 'Riely Ferguson', Hostel: 'Hall 7', Size: 'Small', Price: 'GHC 35' },
+//   { id: '2', No: '2', Name: 'lauren Jackson', Hostel: 'Evandy - Newsite', Size: 'Medium', Price: 'GHC 70'},
+//   { id: '3', No: '3', Name: 'Princess Rashida', Hostel: 'Victory Towers', Size: 'Medium', Price: 'GHC 70' },
+//   // Add more data as needed
+// ];
 
 
 
 
-const Table = ({onSelectCountChange}) => {
+const Table = ({onSelectCountChange, totalOrders}) => {
   
   const [selectBookingID, setSelectBookingID] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0)
   const [modalVisible, setModalVisible] = useState(false)
   const [selectStudent, setSelectedStudent] = useState(0)
   const BASE_CUSTOMER_URL = "https://backend-node-0kx8.onrender.com";
-  const [orders, setOrders] = useState([])
+  const [orders, setOrders] = useState({ data: [] });
   const [error, setError] = useState(null);
-
+  // const [totalOrders, setTotalOrders] = useState(0)
 
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await fetch('/api/orders/orders')
+        const response = await fetch(`${BASE_CUSTOMER_URL}/api/orders/orders`)
         if (!response.ok){
           throw new Error ("Failed To Fetch")
         }
 
         const data = await response.json()
         setOrders(data)
-        console.log("orders")
+        console.log(orders.data)
       }
       catch (err) {
         setError(err.message)
@@ -49,22 +49,29 @@ const Table = ({onSelectCountChange}) => {
   }, [])
  
 
-  useEffect(() =>{
-      const totalPrice = data.reduce((sum, item) => {
-      const price = parseFloat(item.Price.replace('GHC', ''))
-      return sum + price
-    },0)
+  useEffect(() => {
+    const totalPrice = selectBookingID.reduce((sum, id) => {
+      const selectedOrder = orders.data?.find((order) => order._id === id);
+      if (selectedOrder) {
+        const price = parseFloat(selectedOrder.orderAmount.replace('GHC', ''));
+        return sum + price;
+      }
+      return sum;
+    }, 0);
+  
+    setTotalPrice(totalPrice);
+    onSelectCountChange(selectBookingID.length, orders.data.length, totalPrice,); // Pass orders.length
+    console.log(orders.data.length)
+  }, [selectBookingID, orders]);
+  
 
-    setTotalPrice(totalPrice)
-
-    onSelectCountChange(selectBookingID.length, data.length, totalPrice)
-  },[selectBookingID])
+ 
 
   const handleSelection = (id) => {
     let updatedSelection;
     if (selectBookingID.includes(id)) {
       updatedSelection = selectBookingID.filter((selectId)=> selectId !== id )
-      console.log(orders)
+      console.log(totalOrders)
 
     }
     else {
@@ -111,15 +118,15 @@ const Table = ({onSelectCountChange}) => {
     const isSelect = selectBookingID.includes(item.id)
 
     return(
-      <TouchableOpacity onPress={() => handleSelection(item.id)}>
+      <TouchableOpacity style={{paddingBottom:35}} onPress={() => handleSelection(item.id)}>
           <View style={[styles.rowContainer, isSelect && styles.selected]}>
-          <Text style={styles.rowNo}>{item.No}</Text>
+          <Text style={styles.rowNo}>{item.orderId}</Text>
           <TouchableOpacity onPress={() => handleNamePress(item)}>
-              <Text style={styles.rowName}>{item.Name}</Text>
+              <Text style={styles.rowName}>{item.customerName}</Text>
           </TouchableOpacity>
-          <Text style={styles.rowHostel}>{item.Hostel}</Text>
-          <Text style={styles.rowSize}>{item.Size}</Text>
-          <Text style={styles.rowText}>{item.Price}</Text>
+          <Text style={styles.rowHostel}>{item.hostelName}</Text>
+          <Text style={styles.rowSize}>{item.size}</Text>
+          <Text style={styles.rowText}>{item.orderAmount}</Text>
         </View>
       </TouchableOpacity>
       
@@ -130,9 +137,9 @@ const Table = ({onSelectCountChange}) => {
       <View style={styles.tableContainer}>
         {renderHeader()}
         <FlatList
-          data={data}
+          data={orders.data || []}
           renderItem={renderItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item._id}
         />
 
         <Modal
@@ -144,7 +151,7 @@ const Table = ({onSelectCountChange}) => {
           <View style={styles.modalContainer}>
               <View style={styles.modalContent}>
                   <Text style={styles.modalText}>
-                    {selectStudent?.Name}
+
                   </Text>
                   <Text style={styles.modalPhone}>
                       Phone: {selectStudent?.Phone}
@@ -172,8 +179,9 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     borderRadius: 12,
     overflow: 'hidden',
-    width: '151%',
-    alignSelf : 'stretch'
+    width: '161%',
+    alignSelf : 'stretch',
+    maxHeight : '65%',
   },
   headerContainer: {
     flexDirection: 'row',
@@ -208,7 +216,7 @@ const styles = StyleSheet.create({
   rowText: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 12,
+    fontSize: 14,
   },
   headerNo: {
     flex: 1,
@@ -231,7 +239,7 @@ const styles = StyleSheet.create({
   rowName: {
     flex: 1,
     textAlign: 'left',
-    fontSize: 12,
+    fontSize: 14,
     paddingLeft : 8,
     maxWidth : 70,
     textDecorationLine : 'underline'
@@ -262,7 +270,7 @@ const styles = StyleSheet.create({
   rowSize: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 12,
+    fontSize: 14,
     paddingLeft : 4,
     
   },

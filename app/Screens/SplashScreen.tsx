@@ -10,19 +10,19 @@ export default function SplashScreen() {
 
  useEffect(() => {
   const timer = setTimeout(() => {
-    // const getToken=async()=>{
-    //   let result=await SecureStore.getItemAsync("token")
-    //   console.log(result)
-    //   if(result){
-    //     navigation.navigate("Home");
-    //   }
-    //   else{
-    //     navigation.navigate('OTPVerification');
-    //   }
+    const getToken=async()=>{
+      let result=await SecureStore.getItemAsync("token")
+      console.log(result)
+      if(result){
+        navigation.navigate("Home");
+      }
+      else{
+        navigation.navigate('OTPVerification');
+      }
 
-    // }
-    // getToken()
-    navigation.navigate('PhoneNumber');
+    }
+    getToken()
+    // navigation.navigate('PhoneNumber'); 
   }, 2000);
 
   return () => clearTimeout(timer);

@@ -28,7 +28,8 @@ export default function Home({ navigation }) {
         {/* Main content */}
         <View style ={{
 
-          gap : 12
+          gap : 12,
+          // backgroundColor: 'red',
         }}>
           {/* Header */}
           <View
@@ -116,12 +117,12 @@ export default function Home({ navigation }) {
         justifyContent : 'space-between',
         alignItems : 'center',
          gap : 12,
-  
+        
       }}>
             <Text style={{
                 fontSize : 20,
                 fontWeight : '700'
-            }}>Bookings Due 24th July</Text>
+            }}>Today's Bookings</Text>
             <View style={{
                 paddingVertical: 8,
                 borderRadius : 16,
@@ -137,11 +138,11 @@ export default function Home({ navigation }) {
           flexDirection: 'row',
           alignItems :'center',
           justifyContent : 'Space-Between',
-          zIndex : 1000
+          zIndex : 1000,
         }}>
             <HostelDropDown/>
             <LocationDropDown/>
-            <Text> {selectCount} / {totalBookings} { selectCount > 1 ? 'Cylinders' : 'Cylinder' } </Text>
+            <Text> {selectCount} / {totalBookings} { selectCount > 1 ?  'Cylinder' : 'Cylinders' } </Text>
         </View>    
          
           <Table onSelectCountChange={handleSelectedCount} />
@@ -185,7 +186,7 @@ const styles = StyleSheet.create({
   contentWrapper: {
     flex: 1, // Allows the main content to take up available space
     justifyContent: 'space-between', // Spreads content and footer
-    gap: 30, // Optional for spacing
+
   },
   container: {
     flexDirection: 'column',
@@ -213,5 +214,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
     alignSelf: 'stretch',
     gap: 16,
+    position: 'static',
+    bottom : '0%'
   },
 });

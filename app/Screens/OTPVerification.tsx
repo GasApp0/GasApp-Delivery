@@ -67,7 +67,7 @@ const OTPVerification = ({ navigation, route }) => {
         // await saveToken(token, userExists, requestId); 
         Alert.alert("Success", "Phone number verified!");
         navigation.navigate("Home");
-        console.log(token)
+        console.log("token")
       }
     } catch (error) {
       console.error("Verification Error:", error);
