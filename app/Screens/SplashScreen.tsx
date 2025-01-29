@@ -17,7 +17,7 @@ export default function SplashScreen() {
         navigation.navigate("Home");
       }
       else{
-        navigation.navigate('OTPVerification');
+        navigation.navigate('PhoneNumber');
       }
 
     }
