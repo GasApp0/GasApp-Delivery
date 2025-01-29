@@ -1,200 +1,122 @@
-import React, { useEffect, useState }  from 'react';
-import { View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity, Modal, Linking, Button } from 'react-native';
+import React, { useEffect, useState, useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity, Modal, Linking, Button, Dimensions } from 'react-native';
 
-
-// const data = [
-//   { id: '1', No: '1', Name: 'Riely Ferguson', Hostel: 'Hall 7', Size: 'Small', Price: 'GHC 35' },
-//   { id: '2', No: '2', Name: 'lauren Jackson', Hostel: 'Evandy - Newsite', Size: 'Medium', Price: 'GHC 70'},
-//   { id: '3', No: '3', Name: 'Princess Rashida', Hostel: 'Victory Towers', Size: 'Medium', Price: 'GHC 70' },
-//   // Add more data as needed
-// ];
-
-
-
-
-const Table = ({onSelectCountChange, totalOrders}) => {
-  
+const Table = ({ onSelectCountChange, totalOrders }) => {
   const [selectBookingID, setSelectBookingID] = useState([]);
-  const [totalPrice, setTotalPrice] = useState(0)
-  const [modalVisible, setModalVisible] = useState(false)
-  const [selectStudent, setSelectedStudent] = useState(0)
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectStudent, setSelectedStudent] = useState(null);
   const BASE_CUSTOMER_URL = "https://backend-node-0kx8.onrender.com";
   const [orders, setOrders] = useState({ data: [] });
-  const [error, setError] = useState(null);
-  const [riderLocation, setRiderLocation] = useState(null);
-  // const [totalOrders, setTotalOrders] = useState(0)
-
+  const [riderLocation, setRiderLocation] = useState("");
+  const [orderLocation, setOrderLocation] = useState(null)
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await fetch(`${BASE_CUSTOMER_URL}/api/orders/orders`)
-        if (!response.ok){
-          throw new Error ("Failed To Fetch")
-        }
-
-        const data = await response.json()
-        setOrders(data)
-        // console.log(orders.data)
+        const response = await fetch(`${BASE_CUSTOMER_URL}/api/orders/orders`);
+        if (!response.ok) throw new Error("Failed to fetch orders");
+        const responseData = await response.json();
+        
+        setOrders(responseData);
+        console.log(orders)
+      } catch (err) {
+        console.error(err.message);
       }
-      catch (err) {
-        setError(err.message)
-      }
-      finally {
-
-      }
-    } 
-
+    };
     fetchOrders();
-
-  }, [])
-
+  }, []);
+        
   useEffect(() => {
     const fetchLocation = async () => {
       try {
-          const location = "downtown";
-          const response = await fetch(`${BASE_CUSTOMER_URL}/api/riders/rider/${location}`)
-
-          if(!response.ok){
-            throw new Error ("Failed To Fetch")
-          }
-
-          const dataLocation = await response.json()
-          setRiderLocation(dataLocation)
-          console.log( "location: ",  dataLocation)
+        const response = await fetch(`${BASE_CUSTOMER_URL}/api/riders/riders`);
+        if (!response.ok) throw new Error("Failed to fetch rider location");
+        const data = await response.json();
+        setRiderLocation(data?.schoolAssigned || '');
+        
+      } catch (err) {
+        console.error(err.message);
       }
-      catch (err) {
-        setError(err.message)
-      }
-      finally {
-
-      }
-    }
-    
+    };
     fetchLocation();
-  }, [])
- 
+  }, []);
 
-  useEffect(() => {
-    const totalPrice = selectBookingID.reduce((sum, id) => {
-      const selectedOrder = orders.data?.find((order) => order._id === id);
-      if (selectedOrder) {
-        const price = parseFloat(selectedOrder.orderAmount.replace('GHC', ''));
-        return sum + price;
-      }
-      return sum;
+  const filteredOrders = useMemo(() => {
+      return orders.data.filter(order => order.schoolName === riderLocation)
+  }, [ orders.data, riderLocation]);
+
+  const totalPrice = useMemo(() => {
+
+    return selectBookingID.reduce((sum, id) => {
+      const selectedOrder = filteredOrders?.find(order => order._id === id);
+      return sum + (selectedOrder ? parseFloat(selectedOrder.orderAmount) : 0);
     }, 0);
+  }, [selectBookingID, orders.data, riderLocation]);
   
-    setTotalPrice(totalPrice);
-    onSelectCountChange(selectBookingID.length, orders.data.length, totalPrice,); // Pass orders.length
-    console.log(riderLocation)
-  }, [selectBookingID, orders]);
+  useEffect(() => {
+    const filteredOrders = orders.data?.filter(order => 
+      riderLocation ? order.data.schoolName === riderLocation : true
+    );
+    // console.log("sfas",orders)
+    onSelectCountChange(selectBookingID.length , filteredOrders.length, totalPrice);
+  }, [selectBookingID, totalPrice, orders.data, riderLocation]);
   
-
- 
 
   const handleSelection = (id) => {
-    let updatedSelection;
-    if (selectBookingID.includes(id)) {
-      updatedSelection = selectBookingID.filter((selectId)=> selectId !== id )
-      console.log(totalOrders)
-
-    }
-    else {
-      updatedSelection = ([...selectBookingID, id])
-    }
-
-    setSelectBookingID(updatedSelection)
-  }
-  
-  const handleNamePress = (student) => {
-    setSelectedStudent(student)
-    setModalVisible(true)
-  }
-
-  const handleCall = () => {
-    if (selectStudent?.Phone) {
-      Linking.openURL(`tel:${selectedStudent.Phone}`)
-    }
-  }
-
-
-  const handleWhatsApp = () => {
-    if (selectStudent?.Phone) {
-      Linking.openURL(`https://wa.me/${selectedStudent.Phone}`)
-    }
-  }
-
-  const renderHeader = () => {
-
-    return(
-      <View style={styles.headerContainer}>
-      <Text style={styles.headerNo}>#</Text>
-      <Text style={styles.headerName}>Name</Text>
-      <Text style={styles.headerHostel}>Hostel</Text>
-      <Text style={styles.headerSize}>Size</Text>
-      <Text style={styles.headerText}>Price</Text>
-    </View>
-    )
- 
+    setSelectBookingID((prev) =>
+      prev.includes(id) ? prev.filter((selectId) => selectId !== id) : [...prev, id]
+    );
   };
 
-  const renderItem = ({ item }) => {
-    
-    const isSelect = selectBookingID.includes(item.id)
+  const renderHeader = () => (
+    <View style={styles.headerContainer}>
+      <Text style={styles.headerText}>#</Text>
+      <Text style={styles.headerText}>Name</Text>
+      <Text style={styles.headerText}>Hostel</Text>
+      <Text style={styles.headerText}>Size</Text>
+      <Text style={styles.headerText}>Price</Text>
+    </View>
+  );
 
-    return(
-      <TouchableOpacity style={{paddingBottom:35}} onPress={() => handleSelection(item.id)}>
-          <View style={[styles.rowContainer, isSelect && styles.selected]}>
-          <Text style={styles.rowNo}>{item.orderId}</Text>
-          <TouchableOpacity onPress={() => handleNamePress(item)}>
-              <Text style={styles.rowName}>{item.customerName}</Text>
+  const renderItem = ({ item }) => {
+    const isSelected = selectBookingID.includes(item._id);
+    return (
+      <TouchableOpacity onPress={() => handleSelection(item._id)}>
+        <View style={[styles.rowContainer, isSelected && styles.selected]}>
+          <Text style={styles.rowText}>{item.orderId}</Text>
+          <TouchableOpacity onPress={() => setSelectedStudent(item)}>
+            <Text style={styles.rowText}>{item.customerName}</Text>
           </TouchableOpacity>
-          <Text style={styles.rowHostel}>{item.hostelName}</Text>
-          <Text style={styles.rowSize}>{item.size}</Text>
+          <Text style={styles.rowText}>{item.hostelName}</Text>
+          <Text style={styles.rowText}>{item.size}</Text>
           <Text style={styles.rowText}>{item.orderAmount}</Text>
         </View>
       </TouchableOpacity>
-      
-  )};
+    );
+  };
 
   return (
     <ScrollView horizontal>
-      <View style={styles.tableContainer}>
-        {renderHeader()}
-        <FlatList
-          data={orders.data || []}
-          renderItem={renderItem}
-          keyExtractor={(item) => item._id}
-        />
-
-        <Modal
-          transparent={true}
-          visible={modalVisible}
-          animationType='slide'
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                  <Text style={styles.modalText}>
-
-                  </Text>
-                  <Text style={styles.modalPhone}>
-                      Phone: {selectStudent?.Phone}
-                  </Text>
-                  <Button title='Call' onPress={handleCall}/>
-                  <Button title='WhatsApp' onPress={handleWhatsApp}/>
-                  <Button
-                      title='Close'
-                      onPress={() => setModalVisible(false)}
-                      color= 'red'
-                  />
-              </View>
+    <View style={[styles.tableContainer, { width: Dimensions.get('window').width }]}>
+      {renderHeader()}
+      <FlatList
+        data={orders.data.filter((order) => (riderLocation ? order.schoolName === riderLocation : true))}
+        renderItem={renderItem}
+        keyExtractor={(item) => item._id}
+      />
+      <Modal visible={modalVisible} transparent animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text>Name: {selectStudent?.customerName}</Text>
+            <Text>Phone: {selectStudent?.Phone}</Text>
+            <Button title="Call" onPress={() => Linking.openURL(`tel:${selectStudent?.Phone}`)} />
+            <Button title="WhatsApp" onPress={() => Linking.openURL(`https://wa.me/${selectStudent?.Phone}`)} />
+            <Button title="Close" onPress={() => setModalVisible(false)} />
           </View>
-        </Modal>
-
-      </View>
-    </ScrollView>
+        </View>
+      </Modal>
+    </View>
+  </ScrollView>
   );
 };
 
@@ -207,7 +129,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     width: '161%',
     alignSelf : 'stretch',
-    maxHeight : '65%',
+    maxHeight : '95%',
   },
   headerContainer: {
     flexDirection: 'row',
