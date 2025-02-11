@@ -8,32 +8,37 @@ const Table = ({ onSelectCountChange, totalOrders }) => {
   const BASE_CUSTOMER_URL = "https://backend-node-0kx8.onrender.com";
   const [orders, setOrders] = useState({ data: [] });
   const [riderLocation, setRiderLocation] = useState("");
-  const [orderLocation, setOrderLocation] = useState(null)
+  const [orderLocation, setOrderLocation] = useState('');
+  const [schoolName, setSchoolName] = useState('');
+  const [riderInfo, setRiderInfo] = useState('');
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
         const response = await fetch(`${BASE_CUSTOMER_URL}/api/orders/orders`);
         if (!response.ok) throw new Error("Failed to fetch orders");
-        const responseData = await response.json();
-        
-        setOrders(responseData);
-        console.log(orders)
+        const data = await response.json();
+
+        const uniqueSchoolName = [...new Set(data.data.map(order => order.schoolName))];
+        setSchoolName(uniqueSchoolName);
+
+        setOrders({ data: data.data });
       } catch (err) {
         console.error(err.message);
       }
     };
     fetchOrders();
   }, []);
-        
+
   useEffect(() => {
     const fetchLocation = async () => {
       try {
         const response = await fetch(`${BASE_CUSTOMER_URL}/api/riders/riders`);
         if (!response.ok) throw new Error("Failed to fetch rider location");
         const data = await response.json();
-        setRiderLocation(data?.schoolAssigned || '');
-        
+
+        const uniqueRiderSchool = [...new Set(data.data.map(riderInfo => riderInfo.schoolAssigned))];
+        setRiderInfo(uniqueRiderSchool[0] || '');
       } catch (err) {
         console.error(err.message);
       }
@@ -42,25 +47,20 @@ const Table = ({ onSelectCountChange, totalOrders }) => {
   }, []);
 
   const filteredOrders = useMemo(() => {
-      return orders.data.filter(order => order.schoolName === riderLocation)
-  }, [ orders.data, riderLocation]);
+    return orders.data.filter(order => order.schoolName === riderInfo);
+  }, [orders.data, riderInfo])
+  console.log(filteredOrders)
 
   const totalPrice = useMemo(() => {
-
     return selectBookingID.reduce((sum, id) => {
-      const selectedOrder = filteredOrders?.find(order => order._id === id);
+      const selectedOrder = filteredOrders.find(order => order._id === id);
       return sum + (selectedOrder ? parseFloat(selectedOrder.orderAmount) : 0);
     }, 0);
-  }, [selectBookingID, orders.data, riderLocation]);
-  
+  }, [selectBookingID, filteredOrders]);
+
   useEffect(() => {
-    const filteredOrders = orders.data?.filter(order => 
-      riderLocation ? order.data.schoolName === riderLocation : true
-    );
-    // console.log("sfas",orders)
-    onSelectCountChange(selectBookingID.length , filteredOrders.length, totalPrice);
-  }, [selectBookingID, totalPrice, orders.data, riderLocation]);
-  
+    onSelectCountChange(selectBookingID.length, filteredOrders.length, totalPrice);
+  }, [selectBookingID, totalPrice, filteredOrders]);
 
   const handleSelection = (id) => {
     setSelectBookingID((prev) =>
@@ -97,26 +97,26 @@ const Table = ({ onSelectCountChange, totalOrders }) => {
 
   return (
     <ScrollView horizontal>
-    <View style={[styles.tableContainer, { width: Dimensions.get('window').width }]}>
-      {renderHeader()}
-      <FlatList
-        data={orders.data.filter((order) => (riderLocation ? order.schoolName === riderLocation : true))}
-        renderItem={renderItem}
-        keyExtractor={(item) => item._id}
-      />
-      <Modal visible={modalVisible} transparent animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text>Name: {selectStudent?.customerName}</Text>
-            <Text>Phone: {selectStudent?.Phone}</Text>
-            <Button title="Call" onPress={() => Linking.openURL(`tel:${selectStudent?.Phone}`)} />
-            <Button title="WhatsApp" onPress={() => Linking.openURL(`https://wa.me/${selectStudent?.Phone}`)} />
-            <Button title="Close" onPress={() => setModalVisible(false)} />
+      <View style={[styles.tableContainer, { width: Dimensions.get('window').width }]}>
+        {renderHeader()}
+        <FlatList
+          data={filteredOrders}
+          renderItem={renderItem}
+          keyExtractor={(item) => item._id}
+        />
+        <Modal visible={modalVisible} transparent animationType="slide">
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text>Name: {selectStudent?.customerName}</Text>
+              <Text>Phone: {selectStudent?.Phone}</Text>
+              <Button title="Call" onPress={() => Linking.openURL(`tel:${selectStudent?.Phone}`)} />
+              <Button title="WhatsApp" onPress={() => Linking.openURL(`https://wa.me/${selectStudent?.Phone}`)} />
+              <Button title="Close" onPress={() => setModalVisible(false)} />
+            </View>
           </View>
-        </View>
-      </Modal>
-    </View>
-  </ScrollView>
+        </Modal>
+      </View>
+    </ScrollView>
   );
 };
 
@@ -128,8 +128,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     width: '161%',
-    alignSelf : 'stretch',
-    maxHeight : '95%',
+    alignSelf: 'stretch',
+    maxHeight: '95%',
   },
   headerContainer: {
     flexDirection: 'row',
@@ -137,14 +137,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
     paddingHorizontal: 10,
-
   },
   headerText: {
     flex: 1,
     fontWeight: 'bold',
     textAlign: 'center',
     fontSize: 14,
-    padding : 9,
+    padding: 9,
   },
   rowContainer: {
     flexDirection: 'row',
@@ -159,75 +158,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
     justifyContent: 'space-evenly',
-    backgroundColor : 'rgba(244, 244, 244, 1)'
+    backgroundColor: 'rgba(244, 244, 244, 1)'
   },
   rowText: {
     flex: 1,
     textAlign: 'center',
     fontSize: 14,
-  },
-  headerNo: {
-    flex: 1,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    fontSize: 14,
-    paddingVertical : 9,
-    
-  },
-  headerName: {
-    flex: 1,
-    fontWeight: 'bold',
-    textAlign: 'left',
-    fontSize: 14,
-    paddingVertical : 9,
-    paddingHorizontal : 6,
-    textDecorationStyle : 'double',
-    textDecorationColor : 'blue'
-  },
-  rowName: {
-    flex: 1,
-    textAlign: 'left',
-    fontSize: 14,
-    paddingLeft : 8,
-    maxWidth : 70,
-    textDecorationLine : 'underline'
-  
-  },
-  headerHostel: {
-    flex: 1,
-    fontWeight: 'bold',
-    textAlign: 'left',
-    fontSize: 14,
-    paddingVertical : 9,
-    paddingHorizontal : 6
-  },
-  headerSize: {
-    flex: 1,
-    fontWeight: 'bold',
-    textAlign: 'left',
-    fontSize: 14,
-    paddingVertical : 9,
-    paddingHorizontal : 6
-  },
-  rowNo: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 12,
-    maxWidth : 33,
-  },
-  rowSize: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 14,
-    paddingLeft : 4,
-    
-  },
-  rowHostel: {
-    flex: 1,
-    textAlign: 'left',
-    fontSize: 12,
-    paddingLeft : 28,
-    maxWidth : 90,
   },
   modalContainer: {
     flex: 1,
@@ -242,16 +178,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
   },
-  modalText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  modalPhone: {
-    fontSize: 16,
-    marginBottom: 20,
-  },
- 
 });
 
 export default Table;
