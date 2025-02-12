@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Dimensions, Animated, Button } from 'react-nati
 import { FlatList } from 'react-native-gesture-handler';
 import PrimaryButton from '@/components/PrimaryButton';
 import BackButton from '@/components/BackButton';
+import { useRoute } from '@react-navigation/native';
 
 const { height, width } = Dimensions.get('window');
 
@@ -19,32 +20,37 @@ const customers = [
 ];
 
 const FillingProcess = ({navigation}) => {
-
+  const route = useRoute()
+  const { filteredOrders = [] } = route.params || {};
   const [selectedIndex, SetSelectedIndex] = useState(0)
   const [filledAmount, setFilledAmount] = useState(0)
   const scrollY = useRef(new Animated.Value(0)).current
   const FlatListRef = useRef(null)
 
-  const totalAmount = customers.reduce((sum, customers) => sum + customers.amount, 0)
+  const totalAmount = filteredOrders.reduce((sum, order) => sum + order.orderAmount, 0)
 
   const ITEM_HEIGHT =   height * 0.1
   const ITEM_OFFSET = ITEM_HEIGHT * 0.7
 
   useEffect(() => {
     FlatListRef.current?.scrollToOffset({
-      offset: (customers.length / 2 - 1) * ITEM_HEIGHT,
+      offset: (filteredOrders.length / 2 - 1) * ITEM_HEIGHT,
       animated : false
     })
   },[])
+
+  useEffect(() => {
+    console.log(totalAmount)
+  }, [filteredOrders])
 
   const handleNextPress = () => {
   
     const nextIndex = selectedIndex + 1
 
-    if (nextIndex >= customers.length){
+    if (nextIndex >= filteredOrders.length){
       navigation.navigate('CylinderDelivery')
     } else {
-      setFilledAmount((prev) => prev + customers[selectedIndex].amount)
+      setFilledAmount((prev) => prev + filteredOrders[selectedIndex].orderAmount)
 
       FlatListRef.current?.scrollToOffset({
         offset: nextIndex * ITEM_HEIGHT,
@@ -90,11 +96,11 @@ const FillingProcess = ({navigation}) => {
         },
       ]}
     >
-      <Text style={styles.nameText}>{item.id}</Text>
-      <Text style={styles.nameText}>{item.name}</Text>
-      <Text style={styles.detailText}>{item.hostel}</Text>
+      <Text style={styles.nameText}>{item.orderId}</Text>
+      <Text style={styles.nameText}>{item.customerName}</Text>
+      <Text style={styles.detailText}>{item.hostelName}</Text>
       <Text style={styles.detailText}>{item.cylinderSize}</Text>
-      <Text style={styles.detailText}>GHS {item.amount}</Text>
+      <Text style={styles.detailText}>GHS {item.orderAmount}</Text>
     </Animated.View>
   )}
  
@@ -122,7 +128,7 @@ const FillingProcess = ({navigation}) => {
           <Text style ={{
             color : 'rgba(0, 0, 0, 0.60)'
           }}>Total</Text>
-          <Text>{customers.length}</Text>
+          <Text>{filteredOrders.length}</Text>
         </View>
 
         <View style={{
@@ -136,7 +142,7 @@ const FillingProcess = ({navigation}) => {
           <Text style ={{
             color : 'rgba(0, 0, 0, 0.60)'
           }}>Left To Fill</Text>
-          <Text>{customers.length - selectedIndex}</Text>
+          <Text>{filteredOrders.length - selectedIndex}</Text>
         </View>  
 
         <View style={{
@@ -160,7 +166,7 @@ const FillingProcess = ({navigation}) => {
           <View style={styles.pickerMask} />
           <Animated.FlatList 
               ref={FlatListRef}
-              data={customers}
+              data={filteredOrders}
               keyExtractor={(item) => item.id}
               showsVerticalScrollIndicator={false}
               bounces = {false}
@@ -189,7 +195,7 @@ const FillingProcess = ({navigation}) => {
       <View style={{
         marginTop : 60
       }}>
-        <PrimaryButton title={selectedIndex === customers.length - 1 ? 'Complete Filling' : 'Next' } onPress={handleNextPress}/>
+        <PrimaryButton title={selectedIndex === filteredOrders.length - 1 ? 'Complete Filling' : 'Next' } onPress={handleNextPress}/>
       </View>
     
     </View>

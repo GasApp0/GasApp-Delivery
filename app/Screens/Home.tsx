@@ -13,13 +13,20 @@ export default function Home({ navigation }) {
   const [selectCount, setSelectCount] = useState(0);
   const [totalBookings, setTotalBookings] = useState(0);
   const [totalPrice, setTotalPrice] = useState(0);
+  const [filteredOrders, setFilterOrders] = useState([])
 
-  const handleSelectedCount = (selectCount, totalCount, price) => {
+  const handleSelectedCount = (selectCount, totalCount, price, filteredOrders) => {
     setSelectCount(selectCount);
     setTotalBookings(totalCount);
     setTotalPrice(price);
+    setFilterOrders(filteredOrders)
   };
 
+  // useEffect (() => {
+  //   console.log(filteredOrders)
+  // }, [filteredOrders])
+
+ 
   const isButtonDisabled = totalBookings > selectCount;
 
   return (
@@ -166,7 +173,8 @@ export default function Home({ navigation }) {
         </View>
           <PrimaryButton
             title={'Start Filling'}
-            onPress={() => navigation.navigate('FillingProcess')}
+            onPress={() => navigation.navigate('FillingProcess', {
+              filteredOrders: Array.isArray(filteredOrders) ? filteredOrders : []            })}
             disabled={isButtonDisabled}
           />
         </View>

@@ -11,6 +11,7 @@ const Table = ({ onSelectCountChange, totalOrders }) => {
   const [orderLocation, setOrderLocation] = useState('');
   const [schoolName, setSchoolName] = useState('');
   const [riderInfo, setRiderInfo] = useState('');
+  const [status, SetStatus] = useState('')
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -21,6 +22,11 @@ const Table = ({ onSelectCountChange, totalOrders }) => {
 
         const uniqueSchoolName = [...new Set(data.data.map(order => order.schoolName))];
         setSchoolName(uniqueSchoolName);
+
+        const uniqueStatus = [ ...new Set(data.data.map(order => order.orderStatus))]
+        SetStatus(uniqueStatus[0] || '')
+
+        // orderStatus
 
         setOrders({ data: data.data });
       } catch (err) {
@@ -46,10 +52,12 @@ const Table = ({ onSelectCountChange, totalOrders }) => {
     fetchLocation();
   }, []);
 
+
   const filteredOrders = useMemo(() => {
     return orders.data.filter(order => order.schoolName === riderInfo);
   }, [orders.data, riderInfo])
-  console.log(filteredOrders)
+  // console.log(filteredOrders)
+
 
   const totalPrice = useMemo(() => {
     return selectBookingID.reduce((sum, id) => {
@@ -58,14 +66,28 @@ const Table = ({ onSelectCountChange, totalOrders }) => {
     }, 0);
   }, [selectBookingID, filteredOrders]);
 
+
   useEffect(() => {
-    onSelectCountChange(selectBookingID.length, filteredOrders.length, totalPrice);
+    onSelectCountChange(selectBookingID.length, filteredOrders.length, totalPrice, filteredOrders);
   }, [selectBookingID, totalPrice, filteredOrders]);
 
   const handleSelection = (id) => {
-    setSelectBookingID((prev) =>
-      prev.includes(id) ? prev.filter((selectId) => selectId !== id) : [...prev, id]
-    );
+    setSelectBookingID((prev) => {
+      const newSelectedIds = prev.includes(id) ? prev.filter((selectId) => selectId !== id) : [...prev, id];
+      
+      // Update the status of the selected orders
+      const updatedOrders = orders.data.map(order => {
+        if (newSelectedIds.includes(order._id)) {
+          return { ...order, orderStatus: 'Picked' };
+        }
+        return order;
+      });
+
+      setOrders({ data: updatedOrders });
+      // console.log(orders)
+
+      return newSelectedIds;
+    });
   };
 
   const renderHeader = () => (
