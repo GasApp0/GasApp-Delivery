@@ -174,7 +174,7 @@ export default function Home({ navigation }) {
           <PrimaryButton
             title={'Start Filling'}
             onPress={() => navigation.navigate('FillingProcess', {
-              filteredOrders: Array.isArray(filteredOrders) ? filteredOrders : []            })}
+              filteredOrders: Array.isArray(filteredOrders) ? filteredOrders : []})}
             disabled={isButtonDisabled}
           />
         </View>

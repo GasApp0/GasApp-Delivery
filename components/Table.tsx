@@ -1,112 +1,146 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity, Modal, Linking, Button, Dimensions } from 'react-native';
 
-const Table = ({ onSelectCountChange, totalOrders }) => {
-  const [selectBookingID, setSelectBookingID] = useState([]);
+const BASE_CUSTOMER_URL = "https://backend-node-0kx8.onrender.com";
+const ORDER_STATUSES = ["pending", "picked", "filling", "filling completed", "completed"];
+
+const StudentModal = ({ student, onClose }) => (
+  <View style={styles.modalContent}>
+    <Text>Name: {student?.customerName}</Text>
+    <Text>Phone: {student?.Phone}</Text>
+    <Button title="Call" onPress={() => Linking.openURL(`tel:${student?.Phone}`)} />
+    <Button title="WhatsApp" onPress={() => Linking.openURL(`https://wa.me/${student?.Phone}`)} />
+    <Button title="Close" onPress={onClose} />
+  </View>
+);
+
+const TableHeader = () => (
+  <View style={styles.headerContainer}>
+    {['#', 'Name', 'Hostel', 'Size', 'Price'].map(header => (
+      <Text key={header} style={styles.headerText}>{header}</Text>
+    ))}
+  </View>
+);
+
+const Table = ({ onSelectCountChange }) => {
+  const [selectedOrders, setSelectedOrders] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectStudent, setSelectedStudent] = useState(null);
-  const BASE_CUSTOMER_URL = "https://backend-node-0kx8.onrender.com";
+  const [selectedStudent, setSelectedStudent] = useState(null);
   const [orders, setOrders] = useState({ data: [] });
-  const [riderLocation, setRiderLocation] = useState("");
-  const [orderLocation, setOrderLocation] = useState('');
-  const [schoolName, setSchoolName] = useState('');
   const [riderInfo, setRiderInfo] = useState('');
-  const [status, SetStatus] = useState('')
+  const [userID, setUserID] = useState('')
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const response = await fetch(`${BASE_CUSTOMER_URL}/api/orders/orders`);
-        if (!response.ok) throw new Error("Failed to fetch orders");
-        const data = await response.json();
-
-        const uniqueSchoolName = [...new Set(data.data.map(order => order.schoolName))];
-        setSchoolName(uniqueSchoolName);
-
-        const uniqueStatus = [ ...new Set(data.data.map(order => order.orderStatus))]
-        SetStatus(uniqueStatus[0] || '')
-
-        // orderStatus
-
-        setOrders({ data: data.data });
-      } catch (err) {
-        console.error(err.message);
+  const updateOrderStatus = useCallback(async (orderId, newStatus) => {
+    if (!ORDER_STATUSES.includes(newStatus)) {
+      console.error("Invalid status value:", newStatus);
+      return;
+    }
+  
+    try {
+      const response = await fetch(`${BASE_CUSTOMER_URL}/api/orders/order/${orderId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderStatus: newStatus }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json(); // Read the response body once
+        throw new Error(errorData.message || "Failed to update order status");
       }
-    };
-    fetchOrders();
+  
+      const data = await response.json(); // Read the response body once
+      console.log('status', data);
+  
+      setOrders(prevOrders => ({
+        data: prevOrders.data.map(order =>
+          order._id === orderId ? { ...order, orderStatus: newStatus } : order
+        )
+      }));
+  
+    } catch (err) {
+      console.error("Error updating order status:", err.message);
+    }
   }, []);
+  
 
   useEffect(() => {
-    const fetchLocation = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch(`${BASE_CUSTOMER_URL}/api/riders/riders`);
-        if (!response.ok) throw new Error("Failed to fetch rider location");
-        const data = await response.json();
+        const [ordersResponse, ridersResponse] = await Promise.all([
+          fetch(`${BASE_CUSTOMER_URL}/api/orders/orders`),
+          fetch(`${BASE_CUSTOMER_URL}/api/riders/riders`)
+        ]);
 
-        const uniqueRiderSchool = [...new Set(data.data.map(riderInfo => riderInfo.schoolAssigned))];
+        if (!ordersResponse.ok || !ridersResponse.ok) 
+          throw new Error("Failed to fetch data");
+
+        const ordersData = await ordersResponse.json();
+        const ridersData = await ridersResponse.json();
+        const uniqueUserID = [...new Set(ordersData.data.map(user => user._id))]
+        setUserID(uniqueUserID[0] || '')
+        // console.log(orderId)
+
+
+        // console.log(ordersData[0]._id)
+
+        const uniqueRiderSchool = [...new Set(ridersData.data.map(rider => rider.schoolAssigned))];
         setRiderInfo(uniqueRiderSchool[0] || '');
+        setOrders({ data: ordersData.data });
       } catch (err) {
-        console.error(err.message);
+        console.error("Error fetching data:", err.message);
       }
     };
-    fetchLocation();
-  }, []);
 
+    fetchData();
+  }, []);
 
   const filteredOrders = useMemo(() => {
     return orders.data.filter(order => order.schoolName === riderInfo);
-  }, [orders.data, riderInfo])
-  // console.log(filteredOrders)
-
+  }, [orders.data, riderInfo]);
 
   const totalPrice = useMemo(() => {
-    return selectBookingID.reduce((sum, id) => {
+    return selectedOrders.reduce((sum, id) => {
       const selectedOrder = filteredOrders.find(order => order._id === id);
       return sum + (selectedOrder ? parseFloat(selectedOrder.orderAmount) : 0);
     }, 0);
-  }, [selectBookingID, filteredOrders]);
-
+  }, [selectedOrders, filteredOrders]);
 
   useEffect(() => {
-    onSelectCountChange(selectBookingID.length, filteredOrders.length, totalPrice, filteredOrders);
-  }, [selectBookingID, totalPrice, filteredOrders]);
+    onSelectCountChange(selectedOrders.length, filteredOrders.length, totalPrice, filteredOrders);
+  }, [selectedOrders, totalPrice, filteredOrders, onSelectCountChange]);
 
-  const handleSelection = (id) => {
-    setSelectBookingID((prev) => {
-      const newSelectedIds = prev.includes(id) ? prev.filter((selectId) => selectId !== id) : [...prev, id];
-      
-      // Update the status of the selected orders
-      const updatedOrders = orders.data.map(order => {
-        if (newSelectedIds.includes(order._id)) {
-          return { ...order, orderStatus: 'Picked' };
-        }
-        return order;
-      });
+  const handleSelection = useCallback(async (id) => {
+    setSelectedOrders(prev => {
+      const newSelectedIds = prev.includes(id) 
+        ? prev.filter(selectId => selectId !== id) 
+        : [...prev, id];
 
-      setOrders({ data: updatedOrders });
-      // console.log(orders)
+      // Update order status
+      if (newSelectedIds.includes(id)) {
+        updateOrderStatus(id, "picked");
+        setOrders(prevOrders => ({
+          data: prevOrders.data.map(order => 
+            order._id === id ? { ...order, orderStatus: "picked" } : order
+          )
+        }));
+        // console.log(updateOrderStatus);
+
+      }
 
       return newSelectedIds;
     });
-  };
+  }, [updateOrderStatus]);
 
-  const renderHeader = () => (
-    <View style={styles.headerContainer}>
-      <Text style={styles.headerText}>#</Text>
-      <Text style={styles.headerText}>Name</Text>
-      <Text style={styles.headerText}>Hostel</Text>
-      <Text style={styles.headerText}>Size</Text>
-      <Text style={styles.headerText}>Price</Text>
-    </View>
-  );
-
-  const renderItem = ({ item }) => {
-    const isSelected = selectBookingID.includes(item._id);
+  const renderItem = useCallback(({ item }) => {
+    const isSelected = selectedOrders.includes(item._id);
     return (
       <TouchableOpacity onPress={() => handleSelection(item._id)}>
         <View style={[styles.rowContainer, isSelected && styles.selected]}>
           <Text style={styles.rowText}>{item.orderId}</Text>
-          <TouchableOpacity onPress={() => setSelectedStudent(item)}>
+          <TouchableOpacity onPress={() => {
+            setSelectedStudent(item);
+            setModalVisible(true);
+          }}>
             <Text style={styles.rowText}>{item.customerName}</Text>
           </TouchableOpacity>
           <Text style={styles.rowText}>{item.hostelName}</Text>
@@ -115,26 +149,26 @@ const Table = ({ onSelectCountChange, totalOrders }) => {
         </View>
       </TouchableOpacity>
     );
-  };
+  }, [selectedOrders, handleSelection]);
 
   return (
     <ScrollView horizontal>
       <View style={[styles.tableContainer, { width: Dimensions.get('window').width }]}>
-        {renderHeader()}
+        <TableHeader />
         <FlatList
           data={filteredOrders}
           renderItem={renderItem}
-          keyExtractor={(item) => item._id}
+          keyExtractor={item => item._id}
         />
         <Modal visible={modalVisible} transparent animationType="slide">
           <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text>Name: {selectStudent?.customerName}</Text>
-              <Text>Phone: {selectStudent?.Phone}</Text>
-              <Button title="Call" onPress={() => Linking.openURL(`tel:${selectStudent?.Phone}`)} />
-              <Button title="WhatsApp" onPress={() => Linking.openURL(`https://wa.me/${selectStudent?.Phone}`)} />
-              <Button title="Close" onPress={() => setModalVisible(false)} />
-            </View>
+            <StudentModal 
+              student={selectedStudent} 
+              onClose={() => {
+                setModalVisible(false);
+                setSelectedStudent(null);
+              }} 
+            />
           </View>
         </Modal>
       </View>
@@ -175,11 +209,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-evenly'
   },
   selected: {
-    flexDirection: 'row',
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-    justifyContent: 'space-evenly',
     backgroundColor: 'rgba(244, 244, 244, 1)'
   },
   rowText: {
