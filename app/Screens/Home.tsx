@@ -1,6 +1,6 @@
 import { Image, StyleSheet, Platform, View, Text, TextInput,FlatList, TouchableOpacity ,ScrollView, Picker  } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import HostelDropDown from '@/components/HostelDropDown'
 import LocationDropDown from '@/components/LocationDropDown'
@@ -14,6 +14,9 @@ export default function Home({ navigation }) {
   const [totalBookings, setTotalBookings] = useState(0);
   const [totalPrice, setTotalPrice] = useState(0);
   const [filteredOrders, setFilterOrders] = useState([])
+  const [orders, setOrders] = useState({ data: [] });
+  const BASE_CUSTOMER_URL = "https://backend-node-0kx8.onrender.com";
+  const ORDER_STATUSES = ["pending", "picked", 'in progress',  "Filling", "filling completed", "completed"];
 
   const handleSelectedCount = (selectCount, totalCount, price, filteredOrders) => {
     setSelectCount(selectCount);
@@ -22,10 +25,58 @@ export default function Home({ navigation }) {
     setFilterOrders(filteredOrders)
   };
 
-  // useEffect (() => {
-  //   console.log(filteredOrders)
-  // }, [filteredOrders])
+     const updateOrderStatus = useCallback(async (orderId, newStatus) => {
+        if (!ORDER_STATUSES.includes(newStatus)) {
+          console.error("Invalid status value:", newStatus);
+          return;
+        }
+      
+        try {
+          const response = await fetch(`${BASE_CUSTOMER_URL}/api/orders/order/${orderId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ newOrderStatus: newStatus }),
+          });
+      
+          if (!response.ok) {
+            const errorData = await response.json(); // Read the response body once
+            throw new Error(errorData.message || "Failed to update order status");
+          }
+      
+          const data = await response.json(); // Read the response body once
+          console.log('status', data);
+      
+          setOrders(prevOrders => ({
+            data: prevOrders.data.map(order =>
+              order._id === orderId ? { ...order, orderStatus: newStatus } : order
+            )
+          }));
+      
+        } catch (err) {
+          console.error("Error updating order status:", err.message);
+        }
+      }, []);
 
+
+  const startFilling = () => {
+    if (filteredOrders.length === 0 ){
+      console.error('No orders selected')
+      return
+    }
+
+    try {
+      for (const order of filteredOrders) {
+         updateOrderStatus(order._id, 'in progress')
+      }
+
+      navigation.navigate('FillingProcess', {
+      filteredOrders: Array.isArray(filteredOrders) ? filteredOrders : []})
+
+    } catch(err) {
+      console.error("Error starting filling process:", err.message);
+
+    }
+  }
  
   const isButtonDisabled = totalBookings > selectCount;
 
@@ -173,8 +224,7 @@ export default function Home({ navigation }) {
         </View>
           <PrimaryButton
             title={'Start Filling'}
-            onPress={() => navigation.navigate('FillingProcess', {
-              filteredOrders: Array.isArray(filteredOrders) ? filteredOrders : []})}
+            onPress={startFilling}
             disabled={isButtonDisabled}
           />
         </View>

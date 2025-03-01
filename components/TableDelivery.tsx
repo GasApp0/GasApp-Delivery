@@ -114,19 +114,17 @@ const Table = ({ onSelectCountChange }) => {
       const newSelectedIds = prev.includes(id) 
         ? prev.filter(selectId => selectId !== id) 
         : [...prev, id];
-
-      // Update order status
+  
+      // Update order status to "completed" when selected
       if (newSelectedIds.includes(id)) {
-        updateOrderStatus(id, "picked");
+        updateOrderStatus(id, "completed");
         setOrders(prevOrders => ({
           data: prevOrders.data.map(order => 
-            order._id === id ? { ...order, orderStatus: "picked" } : order
+            order._id === id ? { ...order, orderStatus: "completed" } : order
           )
         }));
-        // console.log(updateOrderStatus);
-
       }
-
+  
       return newSelectedIds;
     });
   }, [updateOrderStatus]);

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Dimensions, Animated } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
 import PrimaryButton from '@/components/PrimaryButton';
@@ -6,6 +6,7 @@ import BackButton from '@/components/BackButton';
 import HostelDropDown from '@/components/HostelDropDown'
 import LocationDropDown from '@/components/LocationDropDown'
 import Table from '@/components/Table';
+import TableDelivery from '@/components/TableDelivery'
 
 const { height, width } = Dimensions.get('window');
 
@@ -16,13 +17,48 @@ const FillingProcess = ({navigation}) => {
   const [totalBookings, setTotalBookings] = useState(0)
   const [totalPrice, setTotalPrice] = useState(0)
   const isButtonDisabled = totalBookings > selectCount
+  const BASE_CUSTOMER_URL = "https://backend-node-0kx8.onrender.com";
+  const ORDER_STATUSES = ["pending", "picked", 'in progress',  "Filling", "filling completed", "completed"];
 
   const handleSelectedCount = (selectCount, totalCount, price) => {
     setSelectCount(selectCount)
     setTotalBookings(totalCount)
     setTotalPrice(price)
-
   }
+
+   const updateOrderStatus = useCallback(async (orderId, newStatus) => {
+        if (!ORDER_STATUSES.includes(newStatus)) {
+          console.error("Invalid status value:", newStatus);
+          return;
+        }
+      
+        try {
+          const response = await fetch(`${BASE_CUSTOMER_URL}/api/orders/order/${orderId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ newOrderStatus: newStatus }),
+          });
+      
+          if (!response.ok) {
+            const errorData = await response.json(); // Read the response body once
+            throw new Error(errorData.message || "Failed to update order status");
+          }
+      
+          const data = await response.json(); // Read the response body once
+          console.log('status', data);
+      
+          setOrders(prevOrders => ({
+            data: prevOrders.data.map(order =>
+              order._id === orderId ? { ...order, orderStatus: newStatus } : order
+            )
+          }));
+      
+        } catch (err) {
+          console.error("Error updating order status:", err.message);
+        }
+      }, []);
+
+
 
   return (
     <View style={styles.container}>
@@ -43,7 +79,7 @@ const FillingProcess = ({navigation}) => {
             }}>/ 4 Delivered</Text> </Text>
       </View>
 
-      <Table onSelectCountChange={handleSelectedCount} />
+      <TableDelivery onSelectCountChange={handleSelectedCount} />
 
       <View style={{
   
