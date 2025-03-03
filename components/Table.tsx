@@ -29,6 +29,7 @@ const Table = ({ onSelectCountChange }) => {
   const [orders, setOrders] = useState({ data: [] });
   const [riderInfo, setRiderInfo] = useState('');
   const [userID, setUserID] = useState('')
+  const [status, setStatus] = useState('')
 
   const updateOrderStatus = useCallback(async (orderId, newStatus) => {
     if (!ORDER_STATUSES.includes(newStatus)) {
@@ -49,17 +50,20 @@ const Table = ({ onSelectCountChange }) => {
       }
   
       const data = await response.json(); // Read the response body once
-      console.log('status', data);
+      // console.log(data);
+      setStatus(data)
   
       setOrders(prevOrders => ({
         data: prevOrders.data.map(order =>
           order._id === orderId ? { ...order, orderStatus: newStatus } : order
         )
       }));
+     
   
     } catch (err) {
       console.error("Error updating order status:", err.message);
     }
+    
   }, []);
   
 
@@ -78,8 +82,9 @@ const Table = ({ onSelectCountChange }) => {
         const ridersData = await ridersResponse.json();
         const uniqueUserID = [...new Set(ordersData.data.map(user => user._id))]
         setUserID(uniqueUserID[0] || '')
-        // console.log("riderInfo")
-
+        // console.log(orders)
+        // console.log(status)
+      
 
         // console.log(ordersData[0]._id)
 
@@ -95,8 +100,11 @@ const Table = ({ onSelectCountChange }) => {
   }, []);
 
   const filteredOrders = useMemo(() => {
-    return orders.data.filter(order => order.schoolName === riderInfo);
+    return orders.data.filter(order => 
+      order.schoolName === riderInfo && order.orderStatus !== "completed"
+    );
   }, [orders.data, riderInfo]);
+  console.log(filteredOrders.length)
 
   const totalPrice = useMemo(() => {
     return selectedOrders.reduce((sum, id) => {
@@ -123,7 +131,8 @@ const Table = ({ onSelectCountChange }) => {
             order._id === id ? { ...order, orderStatus: "picked" } : order
           )
         }));
-        // console.log(updateOrderStatus);
+        console.log(selectedOrders);
+   
 
       }
 
