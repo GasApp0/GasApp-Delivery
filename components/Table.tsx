@@ -104,7 +104,7 @@ const Table = ({ onSelectCountChange }) => {
       order.schoolName === riderInfo && order.orderStatus !== "completed"
     );
   }, [orders.data, riderInfo]);
-  console.log(filteredOrders.length)
+  console.log(filteredOrders)
 
   const totalPrice = useMemo(() => {
     return selectedOrders.reduce((sum, id) => {
