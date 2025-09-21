@@ -5,9 +5,9 @@ import MainNav from './MainNav';
 
 export default function Index() {
   return (
-    <NavigationContainer>
+    // <NavigationContainer>
       <MainNav/>
-    </NavigationContainer>
+    // </NavigationContainer>
   );
 }
 

@@ -2,10 +2,10 @@ import { Image, StyleSheet, Platform, View, Text, TextInput,FlatList, TouchableO
 import Svg, { Path } from 'react-native-svg';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import HostelDropDown from '@/components/HostelDropDown'
-import LocationDropDown from '@/components/LocationDropDown'
-import Table from '@/components/Table';
-import PrimaryButton from '@/components/PrimaryButton';
+import PrimaryButton from '../../components/PrimaryButton';
+import HostelDropDown from '../../components/BackButton';
+import LocationDropDown from '../../components/BackButton';
+import Table from '../../components/BackButton';
 
 
 

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, Alert, StyleSheet, TouchableOpacity } from 'react-native';
-import PrimaryButton from '@/components/PrimaryButton';
-import BackButton from '@/components/BackButton';
+import PrimaryButton from '../../components/PrimaryButton';
+import BackButton from '../../components/BackButton';
 import axios from 'axios';
 
 import * as SecureStore from 'expo-secure-store';

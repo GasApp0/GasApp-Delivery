@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions, Animated } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
-import PrimaryButton from '@/components/PrimaryButton';
-import BackButton from '@/components/BackButton';
+import PrimaryButton from '../../components/PrimaryButton';
+import BackButton from '../../components/BackButton';
 import { useRoute } from '@react-navigation/native';
 
 const { height, width } = Dimensions.get('window');

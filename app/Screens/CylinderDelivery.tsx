@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Dimensions, Animated } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
-import PrimaryButton from '@/components/PrimaryButton';
-import BackButton from '@/components/BackButton';
-import HostelDropDown from '@/components/HostelDropDown'
-import LocationDropDown from '@/components/LocationDropDown'
+import PrimaryButton from '../../components/PrimaryButton';
+import BackButton from '../../components/BackButton';
+import HostelDropDown from '../../components/BackButton';
+import LocationDropDown from '../../components/BackButton';
 import Table from '@/components/Table';
-import TableDelivery from '@/components/TableDelivery'
+import TableDelivery from '../../components/BackButton';
 
 const { height, width } = Dimensions.get('window');
 
