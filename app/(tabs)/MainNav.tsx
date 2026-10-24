@@ -6,6 +6,10 @@ import Home from '../Screens/Home';
 import FillingProcess from '../Screens/FillingProcess';
 import CylinderDelivery from '../Screens/CylinderDelivery';
 import OTPVerification from '../Screens/OTPVerification';
+import RiderHome from '../Screens/RiderHome';
+import DeliveryTracking from '../Screens/DeliveryTracking';
+import BatchOrderHome from '../Screens/BatchOrderHome';
+import FillingProcessBatch from '../Screens/FillingProcessBatch';
 // import Username from '../Screens/PhoneNumber copy';
 
 const Stack = createNativeStackNavigator();
@@ -13,7 +17,7 @@ const Stack = createNativeStackNavigator();
 export default function MainNav() {
   return (
     <Stack.Navigator 
-    initialRouteName="SplashScreen"
+    initialRouteName="RiderHome"
     id={undefined}
 
     >
@@ -23,6 +27,10 @@ export default function MainNav() {
       <Stack.Screen name="FillingProcess" component={FillingProcess} options={{ headerShown: false }} />
       <Stack.Screen name="CylinderDelivery" component={CylinderDelivery} options={{ headerShown: false }} />
       <Stack.Screen name="OTPVerification" component={OTPVerification} options={{ headerShown: false }} />
+      <Stack.Screen name="RiderHome" component={RiderHome} options={{ headerShown: false }} />
+      <Stack.Screen name="DeliveryTracking" component={DeliveryTracking} options={{ headerShown: false }} />
+      <Stack.Screen name="BatchOrderHome" component={BatchOrderHome} options={{ headerShown: false }} />
+      <Stack.Screen name="FillingProcessBatch" component={FillingProcessBatch} options={{ headerShown: false }} />
       {/* <Stack.Screen name="Username" component={Username} options={{ headerShown: false }} /> */}
 
     </Stack.Navigator>

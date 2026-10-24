@@ -10,6 +10,10 @@ npm-debug.*
 *.orig.*
 web-build/
 
+# iOS native build artifacts
+ios/Pods/
+ios/build/
+
 # macOS
 .DS_Store
 
